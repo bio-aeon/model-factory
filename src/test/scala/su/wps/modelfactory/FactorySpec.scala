@@ -49,11 +49,11 @@ class FactorySpec extends Specification {
     }
 
     "construct a model with None value" >> {
-      Factory.register[WithOptionalName]() { withOptional =>
+      Factory.register[WithOptionalName](Some('withNull)) { withOptional =>
         withOptional.name.mapsTo(None)
       }
 
-      val withOptional = Factory.build[WithOptionalName]
+      val withOptional = Factory.build[WithOptionalName](Some('withNull))
       withOptional.name mustEqual None
     }
 
