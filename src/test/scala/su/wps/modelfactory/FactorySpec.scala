@@ -129,5 +129,25 @@ class FactorySpec extends Specification {
       worker.name mustEqual workerName
       worker.company.name mustEqual companyName
     }
+
+    "implicitly create random fields" >> {
+      Factory.register[User](Some('randomUser)) { user =>
+        user.id.isRandom and
+        user.name.isRandom
+      }
+
+      val user = Factory.build[User](Some('randomUser))
+      user.id mustNotEqual null
+      user.name mustNotEqual null
+    }
+
+    "create random field which set manually" >> {
+      Factory.register[Company](Some('randomCompany)) { company =>
+        company.name.isRandom(() => "someCompany").alone
+      }
+
+      val company = Factory.build[Company](Some('randomCompany))
+      company.name mustEqual "someCompany"
+    }
   }
 }
