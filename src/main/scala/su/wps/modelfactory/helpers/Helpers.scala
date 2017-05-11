@@ -2,6 +2,7 @@ package su.wps.modelfactory.helpers
 
 import su.wps.modelfactory.Factory
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 import scala.util.Try
 
@@ -24,7 +25,7 @@ import scala.util.Try
   * An object for testing can now be created simply be calling MilkO().
   *
   */
-abstract class FactoryObject[T](implicit tag: TypeTag[T]) {
+abstract class FactoryObject[T](implicit tag: ClassTag[T]) {
 
   def create(symbol: Option[Symbol] = None) = Try(Factory.build[T](symbol))
 

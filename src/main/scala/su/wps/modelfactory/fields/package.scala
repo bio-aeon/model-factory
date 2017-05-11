@@ -1,8 +1,9 @@
 package su.wps.modelfactory
 
-import objects.ObjectSetter
-import scala.util.Random
+import su.wps.modelfactory.objects.ObjectSetter
+
 import scala.language.implicitConversions
+import scala.util.Random
 
 /**
   * This package object will have the implicit conversion to turn a FieldSetter to an

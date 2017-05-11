@@ -3,6 +3,7 @@ package su.wps.modelfactory.reflection
 import su.wps.modelfactory.fields.FieldSetter
 
 import scala.reflect.runtime.universe._
+import scala.reflect.{ClassTag, api}
 
 /**
   * This is the object that does the magic.
@@ -14,11 +15,11 @@ import scala.reflect.runtime.universe._
   */
 object ObjectReflector {
 
-  def create[T, Any](fieldSetters : List[FieldSetter[T, Any]])(implicit tag : TypeTag[T]) : T = {
-
-    val constructorList = typeOf[T].decl(termNames.CONSTRUCTOR).asTerm.alternatives.collect {
-      case m : MethodSymbol => m.paramLists.map(_.map(x => x.asInstanceOf[TermSymbol]))
-    }.flatten
+  def create[T, Any](fieldSetters : List[FieldSetter[T, Any]])(implicit tag : ClassTag[T]) : T = {
+    val constructorList = classToTypeTag(tag.runtimeClass).tpe.decl(termNames.CONSTRUCTOR)
+      .asTerm.alternatives.collect {
+        case m : MethodSymbol => m.paramLists.map(_.map(x => x.asInstanceOf[TermSymbol]))
+      }.flatten
 
     val minConstructor = constructorList.minBy(_.size)
 
@@ -51,8 +52,19 @@ object ObjectReflector {
     instance
   }
 
-  def clazz[T](implicit tag : TypeTag[T]): Class[_] =
-    tag.mirror.runtimeClass(tag.tpe).asInstanceOf[Class[T]]
+  def clazz[T](implicit tag : ClassTag[T]): Class[_] =
+    tag.runtimeClass.asInstanceOf[Class[T]]
 
-  def classSymbol[T](implicit tag : TypeTag[T]) = Symbol(clazz[T].getName)
+  def classSymbol[T](implicit tag : ClassTag[T]) = Symbol(clazz[T].getName)
+
+  def classToTypeTag[T](cls: Class[T]): TypeTag[T] = {
+    val mirror = runtimeMirror(cls.getClassLoader)
+    val typ = mirror.classSymbol(cls).selfType
+    TypeTag[T](mirror, new api.TypeCreator {
+      def apply[U <: api.Universe with Singleton](m: api.Mirror[U]): U # Type =
+        if (m eq mirror) typ.asInstanceOf[U # Type]
+        else throw new IllegalArgumentException(s"Type tag defined in $mirror cannot be " +
+          s"migrated to other mirrors.")
+    })
+  }
 }

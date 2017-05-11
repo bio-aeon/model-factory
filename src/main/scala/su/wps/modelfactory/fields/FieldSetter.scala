@@ -3,8 +3,6 @@ package su.wps.modelfactory.fields
 import su.wps.modelfactory.objects.ObjectSetter
 import su.wps.modelfactory.reflection.FieldReflector
 
-import scala.reflect.runtime.universe.TypeTag
-
 /**
   * A FieldSetter is used to set a certain field to an instance of an object.
   *
@@ -13,7 +11,7 @@ import scala.reflect.runtime.universe.TypeTag
   */
 abstract class FieldSetter[+O, +F](val propName: String, clazz: Class[_]) {
 
-  def setValue[B >: O](obj : B)(implicit tag : TypeTag[B]) {
+  def setValue[B >: O](obj : B) {
     new FieldReflector(obj).setV(propName, getValue)
   }
 
@@ -21,5 +19,5 @@ abstract class FieldSetter[+O, +F](val propName: String, clazz: Class[_]) {
 
   def alone = new ObjectSetter[O](List(this))
 
-  def getValueClass : Class[_] = clazz
+  def getValueClass: Class[_] = clazz
 }

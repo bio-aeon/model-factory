@@ -2,7 +2,7 @@ package su.wps.modelfactory.fields
 
 import su.wps.modelfactory.reflection.ObjectReflector
 
-import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.ClassTag
 
 /**
   * This class works together with the ObjectBuilder to let users create some
@@ -20,19 +20,19 @@ class FieldBuilder(val propName: String) {
   type objectType
   type fieldType
 
-  def mapsTo(value : fieldType)(implicit tag : TypeTag[fieldType]) : FieldSetter[objectType, fieldType] = {
+  def mapsTo(value : fieldType)(implicit tag : ClassTag[fieldType]) : FieldSetter[objectType, fieldType] = {
     new SpecifiedFieldSetter[objectType, fieldType](propName, value, fieldClass)
   }
 
-  def isRandom(implicit random : Randomizer[fieldType], tag : TypeTag[fieldType]) : FieldSetter[objectType, fieldType] =
+  def isRandom(implicit random : Randomizer[fieldType], tag : ClassTag[fieldType]) : FieldSetter[objectType, fieldType] =
     mapsTo(random())
 
-  def isRandom(random : (() => fieldType)) (implicit tag : TypeTag[fieldType]) : FieldSetter[objectType, fieldType] =
+  def isRandom(random : (() => fieldType)) (implicit tag : ClassTag[fieldType]) : FieldSetter[objectType, fieldType] =
     mapsTo(random())
 
-  def isAnotherFactoryModel(implicit tag : TypeTag[fieldType]) =
+  def isAnotherFactoryModel(implicit tag : ClassTag[fieldType]) =
     new OtherModelFieldSetter[objectType, fieldType](propName, fieldClass)
 
-  private def fieldClass(implicit tag : TypeTag[fieldType]) = ObjectReflector.clazz[fieldType]
+  private def fieldClass(implicit tag : ClassTag[fieldType]) = ObjectReflector.clazz[fieldType]
 
 }

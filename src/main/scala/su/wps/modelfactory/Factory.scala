@@ -7,20 +7,20 @@ import su.wps.modelfactory.objects.{ObjectBuilder, ObjectSetter}
 import su.wps.modelfactory.reflection.ObjectReflector
 
 import scala.collection.JavaConverters._
-import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.ClassTag
 
 object Factory {
   private[this] val models = new ConcurrentHashMap[Symbol, ObjectSetter[Any]]().asScala
 
   def register[O](symbol : Option[Symbol] = None)
                  (model : ObjectBuilder[O] => ObjectSetter[O])
-                 (implicit tag : TypeTag[O]) {
+                 (implicit tag : ClassTag[O]) {
     models += ((mapKey(symbol), model(ObjectBuilder[O]())))
   }
 
   def build[O] (
       symbol : Option[Symbol],
-      overriders : (ObjectBuilder[O] => ObjectSetter[O]))(implicit tag : TypeTag[O]) : O = {
+      overriders : (ObjectBuilder[O] => ObjectSetter[O]))(implicit tag : ClassTag[O]) : O = {
     val creator = models.getOrElse(
       mapKey(symbol),
       throw new IllegalStateException(s"No builder register for $symbol")
@@ -29,7 +29,7 @@ object Factory {
   }
 
   def build[O] (symbol : Option[Symbol], attributes: (Symbol, Any)*)
-               (implicit tag : TypeTag[O]) : O = {
+               (implicit tag : ClassTag[O]) : O = {
     val creator = models.getOrElse(
       mapKey(symbol),
       throw new IllegalStateException(s"No builder register for $symbol")
@@ -37,7 +37,7 @@ object Factory {
     val objectBuilder = ObjectBuilder[O]()
 
     val fieldSetters = attributes.map { case (attrName, attrValue) =>
-      val fieldType = tag.mirror.runtimeClass(tag.tpe).getDeclaredField(attrName.name).getType
+      val fieldType = tag.runtimeClass.getDeclaredField(attrName.name).getType
       new SpecifiedFieldSetter(attrName.name, attrValue, fieldType)
     }.toList
 
@@ -45,22 +45,22 @@ object Factory {
     ObjectReflector.create(creator.overrideFields(overriders(objectBuilder)).fieldSetters)
   }
 
-  def build[O](symbol : Option[Symbol])(implicit tag : TypeTag[O]): O = {
+  def build[O](symbol : Option[Symbol])(implicit tag : ClassTag[O]): O = {
     build(symbol, (model : ObjectBuilder[O] ) => new ObjectSetter[O](List()))
   }
 
-  def build[O](implicit tag : TypeTag[O]): O = build(None)
+  def build[O](implicit tag : ClassTag[O]): O = build(None)
 
   def build[O] (
       overriders : (ObjectBuilder[O] => ObjectSetter[O]) = (model : ObjectBuilder[O] ) => new ObjectSetter[O](List()))
-     (implicit tag : TypeTag[O]) : O = {
+     (implicit tag : ClassTag[O]) : O = {
     build(None, overriders)
   }
 
-  def build[O](attributes: (Symbol, Any)*)(implicit tag : TypeTag[O]) : O = {
+  def build[O](attributes: (Symbol, Any)*)(implicit tag : ClassTag[O]) : O = {
     build(None, attributes: _*)
   }
 
-  private def mapKey[O](symbol : Option[Symbol])(implicit tag : TypeTag[O]) =
+  private def mapKey[O](symbol : Option[Symbol])(implicit tag : ClassTag[O]) =
     symbol.getOrElse(ObjectReflector.classSymbol[O])
 }
